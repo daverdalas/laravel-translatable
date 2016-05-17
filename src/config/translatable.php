@@ -1,36 +1,6 @@
 <?php
 
 return [
-
-    /*
-    |--------------------------------------------------------------------------
-    | Application Locales
-    |--------------------------------------------------------------------------
-    |
-    | Contains an array with the applications available locales.
-    |
-    */
-    'locales' => [
-        'en',
-        'fr',
-        'es' => [
-            'MX', // mexican spanish
-            'CO', // colombian spanish
-        ],
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Locale separator
-    |--------------------------------------------------------------------------
-    |
-    | This is a string used to glue the language and the country when defining
-    | the available locales. Example: if set to '-', then the locale for
-    | colombian spanish will be saved as 'es-CO' into the database.
-    |
-    */
-    'locale_separator' => '-',
-
     /*
     |--------------------------------------------------------------------------
     | Default locale
@@ -104,5 +74,20 @@ return [
     |
     */
     'always_fillable' => false,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Languages Model
+    |--------------------------------------------------------------------------
+    */
+    'languages_model' => App\Models\Language::class,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Language default foregin key
+    |--------------------------------------------------------------------------
+    */
+    'language_def_foregin_key' => 'language_id'
+
 
 ];

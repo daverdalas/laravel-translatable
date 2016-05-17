@@ -1,72 +1,65 @@
 <?php namespace Dimsav\Translatable;
 
 use App;
-use Dimsav\Translatable\Exception\LocalesNotDefinedException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\Eloquent\MassAssignmentException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
+
 trait Translatable
 {
     /**
      * Alias for getTranslation()
      *
-     * @param string|null $locale
+     * @param LanguageModel|null $language
      * @param bool $withFallback
-     *
-     * @return \Illuminate\Database\Eloquent\Model|null
+     * @return Model|null
      */
-    public function translate($locale = null, $withFallback = false)
+    public function translate(LanguageModel $language = null, $withFallback = false)
     {
-        return $this->getTranslation($locale, $withFallback);
+        return $this->getTranslation($language, $withFallback);
     }
 
     /**
      * Alias for getTranslation()
      *
-     * @param string $locale
-     *
-     * @return \Illuminate\Database\Eloquent\Model|null
+     * @param LanguageModel $language
+     * @return Model|null
+     * @internal param LanguageModel|string $locale
      */
-    public function translateOrDefault($locale)
+    public function translateOrDefault(LanguageModel $language)
     {
-        return $this->getTranslation($locale, true);
+        return $this->getTranslation($language, true);
     }
 
     /**
      * Alias for getTranslationOrNew()
      *
-     * @param string $locale
-     *
-     * @return \Illuminate\Database\Eloquent\Model|null
+     * @param $language
+     * @return Model|null
      */
-    public function translateOrNew($locale)
+    public function translateOrNew(LanguageModel $language)
     {
-        return $this->getTranslationOrNew($locale);
+        return $this->getTranslationOrNew($language);
     }
 
     /**
-     * @param string|null $locale
-     * @param bool        $withFallback
-     *
-     * @return \Illuminate\Database\Eloquent\Model|null
+     * @param LanguageModel|null $language
+     * @param bool $withFallback
+     * @return Model|null
      */
-    public function getTranslation($locale = null, $withFallback = null)
+    public function getTranslation(LanguageModel $language = null, $withFallback = null)
     {
-        $configFallbackLocale = $this->getFallbackLocale($locale);
-        $locale = $locale ?: $this->locale();
+        $language = $language ?: $this->localeLanguage();
         $withFallback = $withFallback === null ? $this->useFallback() : $withFallback;
-        $fallbackLocale = $this->getFallbackLocale($locale);
 
-        if ($translation = $this->getTranslationByLocaleKey($locale)) {
+        if ($translation = $this->getTranslationByLanguage($language)) {
             return $translation;
         }
-        if ($withFallback && $fallbackLocale) {
-            if ($translation = $this->getTranslationByLocaleKey($fallbackLocale)) {
-                return $translation;
-            }
-            if ($translation = $this->getTranslationByLocaleKey($configFallbackLocale)) {
+        if ($withFallback) {
+            $fallbackLanguage = $this->getFallbackLanguage();
+            if ($fallbackLanguage && $translation = $this->getTranslationByLanguage($fallbackLanguage)) {
                 return $translation;
             }
         }
@@ -75,16 +68,15 @@ trait Translatable
     }
 
     /**
-     * @param string|null $locale
-     *
+     * @param LanguageModel|null $language
      * @return bool
      */
-    public function hasTranslation($locale = null)
+    public function hasTranslation(LanguageModel $language = null)
     {
-        $locale = $locale ?: $this->locale();
+        $language = $language ?: $this->localeLanguage();
 
         foreach ($this->translations as $translation) {
-            if ($translation->getAttribute($this->getLocaleKey()) == $locale) {
+            if ($translation->getAttribute($this->getLanguageForeginKey()) == $language->id) {
                 return true;
             }
         }
@@ -107,7 +99,7 @@ trait Translatable
     {
         $config = App::make('config');
 
-        return get_class($this).$config->get('translatable.translation_suffix', 'Translation');
+        return get_class($this) . $config->get('translatable.translation_suffix', 'Translation');
     }
 
     /**
@@ -125,17 +117,6 @@ trait Translatable
 
         return $key;
     }
-
-    /**
-     * @return string
-     */
-    public function getLocaleKey()
-    {
-        $config = App::make('config');
-
-        return $this->localeKey ?: $config->get('translatable.locale_key', 'locale');
-    }
-
     /**
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
@@ -153,16 +134,18 @@ trait Translatable
     {
         if (str_contains($key, ':')) {
             list($key, $locale) = explode(':', $key);
-        } else {
-            $locale = $this->locale();
+            $language = $this->getLanguageByCodeKey($locale);
         }
 
         if ($this->isTranslationAttribute($key)) {
-            if ($this->getTranslation($locale) === null) {
+            if (!isset($language)) {
+                $language = $this->localeLanguage();
+            }
+            if ($this->getTranslation($language) === null) {
                 return;
             }
 
-            return $this->getTranslation($locale)->$key;
+            return $this->getTranslation($language)->$key;
         }
 
         return parent::getAttribute($key);
@@ -170,18 +153,21 @@ trait Translatable
 
     /**
      * @param string $key
-     * @param mixed  $value
+     * @param mixed $value
+     * @return $this
      */
     public function setAttribute($key, $value)
     {
         if (str_contains($key, ':')) {
             list($key, $locale) = explode(':', $key);
-        } else {
-            $locale = $this->locale();
+            $language = $this->getLanguageByCodeKey($locale);
         }
 
         if ($this->isTranslationAttribute($key)) {
-            $this->getTranslationOrNew($locale)->$key = $value;
+            if (!isset($language)) {
+                $language = $this->localeLanguage();
+            }
+            $this->getTranslationOrNew($language)->$key = $value;
         } else {
             return parent::setAttribute($key, $value);
         }
@@ -224,14 +210,13 @@ trait Translatable
     }
 
     /**
-     * @param string $locale
-     *
-     * @return \Illuminate\Database\Eloquent\Model|null
+     * @param LanguageModel $language
+     * @return Model|null
      */
-    protected function getTranslationOrNew($locale)
+    protected function getTranslationOrNew(LanguageModel $language)
     {
-        if (($translation = $this->getTranslation($locale, false)) === null) {
-            $translation = $this->getNewTranslation($locale);
+        if (($translation = $this->getTranslation($language, false)) === null) {
+            $translation = $this->getNewTranslation($language);
         }
 
         return $translation;
@@ -249,71 +234,79 @@ trait Translatable
         $totallyGuarded = $this->totallyGuarded();
 
         foreach ($attributes as $key => $values) {
-            if ($this->isKeyALocale($key)) {
+            if ($key === 'translations') {
+                if ($totallyGuarded) {
+                    throw new MassAssignmentException($key);
+                }
                 foreach ($values as $translationAttribute => $translationValue) {
-                    if ($this->alwaysFillable() || $this->isFillable($translationAttribute)) {
-                        $this->getTranslationOrNew($key)->$translationAttribute = $translationValue;
-                    } elseif ($totallyGuarded) {
-                        throw new MassAssignmentException($key);
-                    }
+                    $languageSkeletor = $this->getNewLanguageModel();
+                    $languageSkeletor->id = $translationAttribute;
+                    $translation = $this->getTranslationOrNew($languageSkeletor);
+                    $translation->id; 
+					$translation->fill($translationValue);
                 }
                 unset($attributes[$key]);
             }
         }
-
         return parent::fill($attributes);
     }
 
     /**
-     * @param string $key
+     * @param LanguageModel $language
      */
-    private function getTranslationByLocaleKey($key)
+    private function getTranslationByLanguage(LanguageModel $language)
     {
         foreach ($this->translations as $translation) {
-            if ($translation->getAttribute($this->getLocaleKey()) == $key) {
+            if ($translation->getAttribute($this->getLanguageForeginKey()) == $language->id) {
                 return $translation;
             }
         }
-
         return;
     }
 
     /**
-     * @param null $locale
-     *
-     * @return string
+     * @return mixed
      */
-    private function getFallbackLocale($locale = null)
+    private function getLanguageForeginKey()
     {
-        if ($locale && $this->isLocaleCountryBased($locale)) {
-            if ($fallback = $this->getLanguageFromCountryBasedLocale($locale)) {
-                return $fallback;
-            }
-        }
-
-        return App::make('config')->get('translatable.fallback_locale');
+        $translationModelName = $this->getTranslationModelName();
+        $translationModel = new $translationModelName();
+        $languageForeginKey = $translationModel->languageForeginKey ?: $this->getDefaultLanguageForeginKey();
+        return $languageForeginKey;
     }
 
     /**
-     * @param $locale
-     *
-     * @return bool
+     * @return mixed
      */
-    private function isLocaleCountryBased($locale)
+    private function getDefaultLanguageForeginKey()
     {
-        return strpos($locale, $this->getLocaleSeparator()) !== false;
+        return App::make('config')->get('translatable.language_def_foregin_key');
     }
 
     /**
-     * @param $locale
-     *
-     * @return string
+     * @return LanguageModel $language
      */
-    private function getLanguageFromCountryBasedLocale($locale)
+    private function getFallbackLanguage()
     {
-        $parts = explode($this->getLocaleSeparator(), $locale);
+        $languageModel = $this->getLanguageModelClass();
+        $language = call_user_func_array([$languageModel, 'getFallback'], []);
+        return $language;
+    }
 
-        return array_get($parts, 0);
+    /**
+     * @return mixed
+     */
+    private function getLanguageModelClass()
+    {
+        return App::make('config')->get('translatable.languages_model');
+    }
+
+    /**
+     * @return LanguageModel
+     */
+    private function getNewLanguageModel(){
+        $class = $this->getLanguageModelClass();
+        return new $class;
     }
 
     /**
@@ -336,56 +329,6 @@ trait Translatable
     public function isTranslationAttribute($key)
     {
         return in_array($key, $this->translatedAttributes);
-    }
-
-    /**
-     * @param string $key
-     *
-     * @return bool
-     *
-     * @throws \Dimsav\Translatable\Exception\LocalesNotDefinedException
-     */
-    protected function isKeyALocale($key)
-    {
-        $locales = $this->getLocales();
-
-        return in_array($key, $locales);
-    }
-
-    /**
-     * @return array
-     *
-     * @throws \Dimsav\Translatable\Exception\LocalesNotDefinedException
-     */
-    protected function getLocales()
-    {
-        $localesConfig = (array) App::make('config')->get('translatable.locales');
-
-        if (empty($localesConfig)) {
-            throw new LocalesNotDefinedException('Please make sure you have run "php artisan config:publish dimsav/laravel-translatable" '.
-                ' and that the locales configuration is defined.');
-        }
-
-        $locales = [];
-        foreach ($localesConfig as $key => $locale) {
-            if (is_array($locale)) {
-                $locales[] = $key;
-                foreach ($locale as $countryLocale) {
-                    $locales[] = $key.$this->getLocaleSeparator().$countryLocale;
-                }
-            } else {
-                $locales[] = $locale;
-            }
-        }
-
-        return $locales;
-    }
-
-    /**
-     * @return string
-     */
-    protected function getLocaleSeparator() {
-        return App::make('config')->get('translatable.locale_separator', '-');
     }
 
     /**
@@ -412,21 +355,20 @@ trait Translatable
     protected function isTranslationDirty(Model $translation)
     {
         $dirtyAttributes = $translation->getDirty();
-        unset($dirtyAttributes[$this->getLocaleKey()]);
 
         return count($dirtyAttributes) > 0;
     }
 
     /**
-     * @param string $locale
-     *
-     * @return \Illuminate\Database\Eloquent\Model
+     * @param LanguageModel $language
+     * @return Model
      */
-    public function getNewTranslation($locale)
+    public function getNewTranslation(LanguageModel $language)
     {
         $modelName = $this->getTranslationModelName();
         $translation = new $modelName();
-        $translation->setAttribute($this->getLocaleKey(), $locale);
+        $translation->setAttribute($this->getLanguageForeginKey(), $language->id);
+        $translation->setAttribute($this->getRelationKey(), $this->id);
         $this->translations->add($translation);
 
         return $translation;
@@ -444,31 +386,29 @@ trait Translatable
 
     /**
      * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param string $locale
-     *
-     * @return \Illuminate\Database\Eloquent\Builder|static
+     * @param LanguageModel|null $language
+     * @return Builder|static
      */
-    public function scopeTranslatedIn(Builder $query, $locale = null)
+    public function scopeTranslatedIn(Builder $query, LanguageModel $language = null)
     {
-        $locale = $locale ?: $this->locale();
+        $language = $language ?: $this->localeLanguage();
 
-        return $query->whereHas('translations', function (Builder $q) use ($locale) {
-            $q->where($this->getLocaleKey(), '=', $locale);
+        return $query->whereHas('translations', function (Builder $q) use ($language) {
+            $q->where($this->getLanguageForeginKey(), '=', $language->id);
         });
     }
 
     /**
      * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param string $locale
-     *
-     * @return \Illuminate\Database\Eloquent\Builder|static
+     * @param LanguageModel|null $language
+     * @return Builder|static
      */
-    public function scopeNotTranslatedIn(Builder $query, $locale = null)
+    public function scopeNotTranslatedIn(Builder $query, LanguageModel $language = null)
     {
-        $locale = $locale ?: $this->locale();
+        $language = $language ?: $this->localeLanguage();
 
-        return $query->whereDoesntHave('translations', function (Builder $q) use ($locale) {
-            $q->where($this->getLocaleKey(), '=', $locale);
+        return $query->whereDoesntHave('translations', function (Builder $q) use ($language) {
+            $q->where($this->getLanguageForeginKey(), '=', $language->id);
         });
     }
 
@@ -493,27 +433,26 @@ trait Translatable
      *  ]
      *
      * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param string                                $translationField
+     * @param string $translationField
      */
     public function scopeListsTranslations(Builder $query, $translationField)
     {
-        $withFallback     = $this->useFallback();
+        $withFallback = $this->useFallback();
         $translationTable = $this->getTranslationsTable();
-        $localeKey        = $this->getLocaleKey();
+        $languageForeginKey = $this->getLanguageForeginKey();
 
         $query
-            ->select($this->getTable().'.'.$this->getKeyName(), $translationTable.'.'.$translationField)
-            ->leftJoin($translationTable, $translationTable.'.'.$this->getRelationKey(), '=', $this->getTable().'.'.$this->getKeyName())
-            ->where($translationTable.'.'.$localeKey, $this->locale())
-        ;
+            ->select($this->getTable() . '.' . $this->getKeyName(), $translationTable . '.' . $translationField)
+            ->leftJoin($translationTable, $translationTable . '.' . $this->getRelationKey(), '=', $this->getTable() . '.' . $this->getKeyName())
+            ->where($translationTable . '.' . $languageForeginKey, $this->localeLanguage()['id']);
         if ($withFallback) {
-            $query->orWhere(function (Builder $q) use ($translationTable, $localeKey) {
-                $q->where($translationTable.'.'.$localeKey, $this->getFallbackLocale())
-                  ->whereNotIn($translationTable.'.'.$this->getRelationKey(), function (QueryBuilder $q) use ($translationTable, $localeKey) {
-                      $q->select($translationTable.'.'.$this->getRelationKey())
-                        ->from($translationTable)
-                        ->where($translationTable.'.'.$localeKey, $this->locale());
-                  });
+            $query->orWhere(function (Builder $q) use ($translationTable, $languageForeginKey) {
+                $q->where($translationTable . '.' . $languageForeginKey, $this->getFallbackLanguage()['id'])
+                    ->whereNotIn($translationTable . '.' . $this->getRelationKey(), function (QueryBuilder $q) use ($translationTable, $languageForeginKey) {
+                        $q->select($translationTable . '.' . $this->getRelationKey())
+                            ->from($translationTable)
+                            ->where($translationTable . '.' . $languageForeginKey, $this->localeLanguage()['id']);
+                    });
             });
         }
     }
@@ -526,11 +465,11 @@ trait Translatable
      */
     public function scopeWithTranslation(Builder $query)
     {
-        $query->with(['translations' => function(Relation $query){
-            $query->where($this->getTranslationsTable().'.'.$this->getLocaleKey(), $this->locale());
+        $query->with(['translations' => function (Relation $query) {
+            $query->where($this->getTranslationsTable() . '.' . $this->getLanguageForeginKey(), $this->localeLanguage()['id']);
 
             if ($this->useFallback()) {
-                return $query->orWhere($this->getTranslationsTable().'.'.$this->getLocaleKey(), $this->getFallbackLocale());
+                return $query->orWhere($this->getTranslationsTable() . '.' . $this->getLanguageForeginKey(), $this->localeLanguage()['id']);
             }
         }]);
     }
@@ -540,18 +479,18 @@ trait Translatable
      * This scope filters results by checking the translation fields.
      *
      * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param string                                $key
-     * @param string                                $value
-     * @param string                                $locale
+     * @param string $key
+     * @param string $value
+     * @param LanguageModel|null $language
      *
-     * @return \Illuminate\Database\Eloquent\Builder|static
+     * @return Builder|static
      */
-    public function scopeWhereTranslation(Builder $query, $key, $value, $locale = null)
+    public function scopeWhereTranslation(Builder $query, $key, $value, LanguageModel $language = null)
     {
-        return $query->whereHas('translations', function (Builder $query) use ($key, $value, $locale) {
-            $query->where($this->getTranslationsTable().'.'.$key, $value);
-            if ($locale) {
-                $query->where($this->getTranslationsTable().'.'.$this->getLocaleKey(), $locale);
+        return $query->whereHas('translations', function (Builder $query) use ($key, $value, $language) {
+            $query->where($this->getTranslationsTable() . '.' . $key, $value);
+            if ($language) {
+                $query->where($this->getTranslationsTable() . '.' . $this->getLanguageForeginKey(), $language->id);
             }
         });
     }
@@ -561,18 +500,18 @@ trait Translatable
      * This scope filters results by checking the translation fields.
      *
      * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param string                                $key
-     * @param string                                $value
-     * @param string                                $locale
+     * @param string $key
+     * @param string $value
+     * @param LanguageModel|null $language
+     * @return Builder|static
      *
-     * @return \Illuminate\Database\Eloquent\Builder|static
      */
-    public function scopeWhereTranslationLike(Builder $query, $key, $value, $locale = null)
+    public function scopeWhereTranslationLike(Builder $query, $key, $value, LanguageModel $language = null)
     {
-        return $query->whereHas('translations', function (Builder $query) use ($key, $value, $locale) {
-            $query->where($this->getTranslationsTable().'.'.$key, 'LIKE', $value);
-            if ($locale) {
-                $query->where($this->getTranslationsTable().'.'.$this->getLocaleKey(), 'LIKE', $locale);
+        return $query->whereHas('translations', function (Builder $query) use ($key, $value, $language) {
+            $query->where($this->getTranslationsTable() . '.' . $key, 'LIKE', $value);
+            if ($language) {
+                $query->where($this->getTranslationsTable() . '.' . $this->getLanguageForeginKey(), 'LIKE', $language->id);
             }
         });
     }
@@ -601,19 +540,32 @@ trait Translatable
     }
 
     /**
-     * @return bool
-     */
-    private function alwaysFillable()
-    {
-        return App::make('config')->get('translatable.always_fillable', false);
-    }
-
-    /**
      * @return string
      */
     private function getTranslationsTable()
     {
         return App::make($this->getTranslationModelName())->getTable();
+    }
+
+    /**
+     * @return LanguageModel|null;
+     */
+    protected function localeLanguage()
+    {
+        $locale = $this->locale();
+        return $this->getLanguageByCodeKey($locale);
+    }
+
+    /**
+     * @param string $key
+     * @return LanguageModel|null;
+     */
+    protected function getLanguageByCodeKey($key)
+    {
+        $languageModel = $this->getLanguageModelClass();
+        $language = call_user_func_array([$languageModel, 'getByCodeKey'], [$key]);
+
+        return $language;
     }
 
     /**
