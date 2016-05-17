@@ -69,15 +69,19 @@ If you want to store translations of your models into the database, this package
 **Filling multiple translations**
 
 ```php
+  $polish = Language::where('code', 'pl')->first();
+  $english = Language::where('code', 'en')->first();
   $data = [
-    'code' => 'gr',
-    'en'  => ['name' => 'Greece'],
-    'fr'  => ['name' => 'Grèce'],
+        'code' => 'grc',
+        'translations' => [
+            $polish->id => ['name' => 'Grecja'],
+            $english->id => ['name' => 'Greece']
+        ]
   ];
 
   $greece = Country::create($data);
   
-  echo $greece->translate('fr')->name; // Grèce
+  echo $greece->translate($english)->name; // Greece
 ```
 
 ## Tutorial
