@@ -92,10 +92,19 @@ Check the tutorial about laravel-translatable in laravel-news: [*How To Add Mult
 
 ### Step 1: Install package
 
-Add the package in your composer.json by executing the command.
+Add the package in your composer.json. For now use this syntax:
 
 ```bash
-composer require dimsav/laravel-translatable
+  "repositories":
+  [
+    {
+      "type": "git",
+      "url": "https://github.com/daverdalas/laravel-translatable.git"
+    }
+  ],
+  "require": {
+    "dimsav/laravel-translatable": "dev-master"
+  }
 ```
 
 Next, add the service provider to `app/config/app.php`
@@ -103,8 +112,17 @@ Next, add the service provider to `app/config/app.php`
 ```
 Dimsav\Translatable\TranslatableServiceProvider::class,
 ```
-
-### Step 2: Migrations
+### Step 2: Languages Table
+Table that holds our languages.
+```php
+Schema::create('languages', function(Blueprint $table) 
+{
+	$table->increments('id');
+	$table->string('code');
+	$table->timestamps();
+});
+```
+### Step 3: Migrations
 
 In this example, we want to translate the model `Country`. We will need an extra table `country_translations`:
 
@@ -112,19 +130,19 @@ In this example, we want to translate the model `Country`. We will need an extra
 Schema::create('countries', function(Blueprint $table)
 {
     $table->increments('id');
-    $table->string('code');
+    $table->string('code')->unique();
     $table->timestamps();
 });
 
 Schema::create('country_translations', function(Blueprint $table)
 {
     $table->increments('id');
-    $table->integer('country_id')->unsigned();
     $table->string('name');
-    $table->string('locale')->index();
+    $table->integer('language_id')->unsigned();
+    $table->integer('country_id')->unsigned();
 
-    $table->unique(['country_id','locale']);
-    $table->foreign('country_id')->references('id')->on('countries')->onDelete('cascade');
+    $table->foreign('language_id')->references('id')->on('languages');
+    $table->foreign('country_id')->references('id')->on('countries');
 });
 ```
 
