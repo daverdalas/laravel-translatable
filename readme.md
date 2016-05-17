@@ -54,14 +54,16 @@ If you want to store translations of your models into the database, this package
 **Saving translated attributes**
 
 ```php
-  $greece = Country::where('code', 'gr')->first();
-  echo $greece->translate('en')->name; // Greece
+  $english = Language::where('code', 'en')->first();
+  $poland = Country::where('code', 'pol')->first();
   
-  $greece->translate('en')->name = 'abc';
-  $greece->save();
+  echo $poland->translate($english)->name; // Poland
   
-  $greece = Country::where('code', 'gr')->first();
-  echo $greece->translate('en')->name; // abc
+  $poland->translate($english)->name = 'abc';
+  $poland->save();
+  
+  $poland = Country::where('code', 'pol')->first();
+  echo $poland->translate($english)->name; // abc
 ```
 
 **Filling multiple translations**
