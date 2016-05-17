@@ -95,16 +95,16 @@ Check the tutorial about laravel-translatable in laravel-news: [*How To Add Mult
 Add the package in your composer.json. For now use this syntax:
 
 ```bash
-  "repositories":
-  [
-    {
-      "type": "git",
-      "url": "https://github.com/daverdalas/laravel-translatable.git"
-    }
-  ],
-  "require": {
-    "dimsav/laravel-translatable": "dev-master"
+"repositories":
+[
+  {
+    "type": "git",
+    "url": "https://github.com/daverdalas/laravel-translatable.git"
   }
+],
+"require": {
+  "dimsav/laravel-translatable": "dev-master"
+}
 ```
 
 Next, add the service provider to `app/config/app.php`
@@ -112,8 +112,11 @@ Next, add the service provider to `app/config/app.php`
 ```
 Dimsav\Translatable\TranslatableServiceProvider::class,
 ```
-### Step 2: Languages Table
-Table that holds our languages.
+### Step 2: Migrations
+
+First create table to store our `languages` data. After that create `countries` and `country_translations tables`.
+In this example, we want to translate the model `Country`. We will need an extra table `country_translations`:
+
 ```php
 Schema::create('languages', function(Blueprint $table) 
 {
@@ -121,12 +124,7 @@ Schema::create('languages', function(Blueprint $table)
 	$table->string('code');
 	$table->timestamps();
 });
-```
-### Step 3: Migrations
 
-In this example, we want to translate the model `Country`. We will need an extra table `country_translations`:
-
-```php
 Schema::create('countries', function(Blueprint $table)
 {
     $table->increments('id');
@@ -148,11 +146,17 @@ Schema::create('country_translations', function(Blueprint $table)
 
 ### Step 3: Models
 
-1. The translatable model `Country` should [use the trait](http://www.sitepoint.com/using-traits-in-php-5-4/) `Dimsav\Translatable\Translatable`. 
-2. The convention for the translation model is `CountryTranslation`.
+1. The model representing language in this example `Language` must extend `\Dimsav\Translatable\LanguageModel` class.
+2. The translatable model `Country` should [use the trait](http://www.sitepoint.com/using-traits-in-php-5-4/) `Dimsav\Translatable\Translatable`. 
+3. The convention for the translation model is `CountryTranslation`.
 
 
 ```php
+// models/Language.php
+class Language extends \Dimsav\Translatable\LanguageModel{
+
+}
+
 // models/Country.php
 class Country extends Eloquent {
     
@@ -176,6 +180,8 @@ class CountryTranslation extends Eloquent {
 
     public $timestamps = false;
     protected $fillable = ['name'];
+    // (optionaly) Default retrieved from the config file
+    // protected $languageForeginKey = ['language_custom_id'];
 
 }
 ```
