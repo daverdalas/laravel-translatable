@@ -1,4 +1,4 @@
-Laravel-Translatable
+Laravel-Translatable * With dynamic languages
 ====================
 
 
@@ -8,6 +8,8 @@ Laravel-Translatable
 [![Latest Stable Version](http://img.shields.io/packagist/v/dimsav/laravel-translatable.svg)](https://packagist.org/packages/dimsav/laravel-translatable)
 [![License](https://poser.pugx.org/dimsav/laravel-translatable/license.svg)](https://packagist.org/packages/dimsav/laravel-translatable)
 [![SensioLabsInsight](https://insight.sensiolabs.com/projects/c105358a-3211-47e8-b662-94aa98d1eeee/mini.png)](https://insight.sensiolabs.com/projects/c105358a-3211-47e8-b662-94aa98d1eeee)
+
+**This package is fork from Dimsav package. I rebuild it in order to use one centralized table with languages data.**
 
 This is a Laravel package for translatable models. Its goal is to remove the complexity in retrieving and storing multilingual model instances. With this package you write less code, as the translations are being fetched/saved when you fetch/save your instance.
 
@@ -37,14 +39,16 @@ If you want to store translations of your models into the database, this package
 **Getting translated attributes**
 
 ```php
-  $greece = Country::where('code', 'gr')->first();
-  echo $greece->translate('en')->name; // Greece
+  $polish = Language::where('code', 'pl')->first();
+  $poland = Country::where('code', 'pol')->first();
+  
+  echo $poland->translate($polish)->name // Polska
   
   App::setLocale('en');
-  echo $greece->name;     // Greece
+  echo $poland->name;     // Poland
 
   App::setLocale('de');
-  echo $greece->name;     // Griechenland
+  echo $poland->name;     // Polen
 ```
 
 **Saving translated attributes**
