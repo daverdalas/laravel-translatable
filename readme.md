@@ -207,7 +207,7 @@ With this command, initialize the configuration and modify the created file, loc
 | Points to class representing languages
 |
 */
-'languages_model' => App\Models\Language::class,
+'languages_model' => App\Language::class,
 
 /*
 |--------------------------------------------------------------------------
