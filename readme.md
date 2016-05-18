@@ -39,49 +39,49 @@ If you want to store translations of your models into the database, this package
 **Getting translated attributes**
 
 ```php
-  $polish = Language::where('code', 'pl')->first();
-  $poland = Country::where('code', 'pol')->first();
-  
-  echo $poland->translate($polish)->name // Polska
-  
-  App::setLocale('en');
-  echo $poland->name;     // Poland
+$polish = Language::where('code', 'pl')->first();
+$poland = Country::where('code', 'pol')->first();
 
-  App::setLocale('de');
-  echo $poland->name;     // Polen
+echo $poland->translate($polish)->name // Polska
+
+App::setLocale('en');
+echo $poland->name;     // Poland
+
+App::setLocale('de');
+echo $poland->name;     // Polen
 ```
 
 **Saving translated attributes**
 
 ```php
-  $english = Language::where('code', 'en')->first();
-  $poland = Country::where('code', 'pol')->first();
-  
-  echo $poland->translate($english)->name; // Poland
-  
-  $poland->translate($english)->name = 'abc';
-  $poland->save();
-  
-  $poland = Country::where('code', 'pol')->first();
-  echo $poland->translate($english)->name; // abc
+$english = Language::where('code', 'en')->first();
+$poland = Country::where('code', 'pol')->first();
+
+echo $poland->translate($english)->name; // Poland
+
+$poland->translate($english)->name = 'abc';
+$poland->save();
+
+$poland = Country::where('code', 'pol')->first();
+echo $poland->translate($english)->name; // abc
 ```
 
 **Filling multiple translations**
 
 ```php
-  $polish = Language::where('code', 'pl')->first();
-  $english = Language::where('code', 'en')->first();
-  $data = [
-        'code' => 'grc',
-        'translations' => [
-            $polish->id => ['name' => 'Grecja'],
-            $english->id => ['name' => 'Greece']
-        ]
-  ];
+$polish = Language::where('code', 'pl')->first();
+$english = Language::where('code', 'en')->first();
+$data = [
+      'code' => 'grc',
+      'translations' => [
+          $polish->id => ['name' => 'Grecja'],
+          $english->id => ['name' => 'Greece']
+      ]
+];
 
-  $greece = Country::create($data);
-  
-  echo $greece->translate($english)->name; // Greece
+$greece = Country::create($data);
+
+echo $greece->translate($english)->name; // Greece
 ```
 
 ## Tutorial
