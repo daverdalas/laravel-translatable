@@ -39,49 +39,49 @@ If you want to store translations of your models into the database, this package
 **Getting translated attributes**
 
 ```php
-  $polish = Language::where('code', 'pl')->first();
-  $poland = Country::where('code', 'pol')->first();
-  
-  echo $poland->translate($polish)->name // Polska
-  
-  App::setLocale('en');
-  echo $poland->name;     // Poland
+$polish = Language::where('code', 'pl')->first();
+$poland = Country::where('code', 'pol')->first();
 
-  App::setLocale('de');
-  echo $poland->name;     // Polen
+echo $poland->translate($polish)->name // Polska
+
+App::setLocale('en');
+echo $poland->name;     // Poland
+
+App::setLocale('de');
+echo $poland->name;     // Polen
 ```
 
 **Saving translated attributes**
 
 ```php
-  $english = Language::where('code', 'en')->first();
-  $poland = Country::where('code', 'pol')->first();
-  
-  echo $poland->translate($english)->name; // Poland
-  
-  $poland->translate($english)->name = 'abc';
-  $poland->save();
-  
-  $poland = Country::where('code', 'pol')->first();
-  echo $poland->translate($english)->name; // abc
+$english = Language::where('code', 'en')->first();
+$poland = Country::where('code', 'pol')->first();
+
+echo $poland->translate($english)->name; // Poland
+
+$poland->translate($english)->name = 'abc';
+$poland->save();
+
+$poland = Country::where('code', 'pol')->first();
+echo $poland->translate($english)->name; // abc
 ```
 
 **Filling multiple translations**
 
 ```php
-  $polish = Language::where('code', 'pl')->first();
-  $english = Language::where('code', 'en')->first();
-  $data = [
-        'code' => 'grc',
-        'translations' => [
-            $polish->id => ['name' => 'Grecja'],
-            $english->id => ['name' => 'Greece']
-        ]
-  ];
+$polish = Language::where('code', 'pl')->first();
+$english = Language::where('code', 'en')->first();
+$data = [
+      'code' => 'grc',
+      'translations' => [
+          $polish->id => ['name' => 'Grecja'],
+          $english->id => ['name' => 'Greece']
+      ]
+];
 
-  $greece = Country::create($data);
-  
-  echo $greece->translate($english)->name; // Greece
+$greece = Country::create($data);
+
+echo $greece->translate($english)->name; // Greece
 ```
 
 ## Tutorial
@@ -190,11 +190,6 @@ The array `$translatedAttributes` contains the names of the fields being transla
 
 ### Step 4: Configuration
 
-Laravel 4.*
-```bash
-php artisan config:publish dimsav/laravel-translatable
-```
-
 Laravel 5.*
 ```bash
 php artisan vendor:publish 
@@ -202,7 +197,31 @@ php artisan vendor:publish
 
 With this command, initialize the configuration and modify the created file, located under `app/config/packages/dimsav/laravel-translatable/translatable.php`.
 
-*Note: There isn't any restriction for the format of the locales. Feel free to use whatever suits you better, like "eng" instead of "en", or "el" instead of "gr".  The important is to define your locales and stick to them.*
+**In this fork there are two new variables added in configuration file:**
+```bash
+/*
+|--------------------------------------------------------------------------
+| Languages Model
+|--------------------------------------------------------------------------
+|
+| Points to class representing languages
+|
+*/
+'languages_model' => App\Language::class,
+
+/*
+|--------------------------------------------------------------------------
+| Language default foregin key
+|--------------------------------------------------------------------------
+|
+| Default name of the foregin language key.
+| It can be overwrite by public $languageForeginKey in 
+| a class representing translations.
+|
+*/
+'language_def_foregin_key' => 'language_id'
+```
+Some not used variables have been removed.
 
 ## Configuration
 
@@ -240,62 +259,65 @@ class Country extends Eloquent
 ```php
 // Before we get started, this is how we determine the current locale.
 // It is set by laravel or other packages.
-App::getLocale(); // 'fr' 
+App::getLocale(); // 'en' 
 
 // To use this package, first we need an instance of our model
-$germany = Country::where('code', 'de')->first();
+$poland = Country::where('code', 'pol')->first();
+
+//and language that we going to use in the examples.
+$german = Language::where('code', 'de')->first();
 
 // This returns an instance of CountryTranslation of using the current locale.
-// So in this case, french. If no french translation is found, it returns null.
-$translation = $germany->translate();
+// So in this case, english. If no english translation is found, it returns null.
+$translation = $poland->translate();
 
 // If an german translation exists, it returns an instance of 
 // CountryTranslation. Otherwise it returns null.
-$translation = $germany->translate('de');
+$translation = $poland->translate($german);
 
 // If a german translation doesn't exist, it attempts to get a translation  
 // of the fallback language (see fallback locale section below).
-$translation = $germany->translate('de', true);
+$translation = $poland->translate($german, true);
 
 // Alias of the above.
-$translation = $germany->translateOrDefault('de');
+$translation = $poland->translateOrDefault($german);
 
 // Returns instance of CountryTranslation of using the current locale.
 // If no translation is found, it returns a fallback translation
 // if enabled in the configuration.
-$translation = $germany->getTranslation();
+$translation = $poland->getTranslation();
 
 // If an german translation exists, it returns an instance of 
 // CountryTranslation. Otherwise it returns null.
-// Same as $germany->translate('de');
-$translation = $germany->getTranslation('de', true);
+// Same as $poland->translate($german);
+$translation = $poland->getTranslation($german, true);
 
 // Returns true/false if the model has translation about the current locale. 
-$germany->hasTranslation();
+$poland->hasTranslation();
 
 // Returns true/false if the model has translation in french. 
-$germany->hasTranslation('fr');
+$poland->hasTranslation($german);
 
 // If a german translation doesn't exist, it returns
 // a new instance of CountryTranslation.
-$translation = $germany->translateOrNew('de');
+$translation = $poland->translateOrNew($german);
 
 // Returns a new CountryTranslation instance for the selected
-// language, and binds it to $germany
-$translation = $germany->getNewTranslation('it');
+// language, and binds it to $poland
+$translation = $poland->getNewTranslation($german);
 
 // The eloquent model relationship. Do what you want with it ;) 
-$germany->translations();
+$poland->translations();
 ```
 
 ### Available scopes
 
 ```php
-// Returns all countries having translations in english
-Country::translatedIn('en')->get();
+// Returns all countries having translations in german
+Country::translatedIn($german)->get();
 
-// Returns all countries not being translated in english
-Country::notTranslatedIn('en')->get();
+// Returns all countries not being translated in german
+Country::notTranslatedIn($german)->get();
 
 // Returns all countries having translations
 Country::translated()->get();
@@ -313,10 +335,10 @@ Country::withTranslation()->get();
 Country::listsTranslations('name')->get()->toArray();
 
 // Filters countries by checking the translation against the given value 
-Country::whereTranslation('name', 'Greece')->first();
+Country::whereTranslation('name', 'Poland')->first();
 
 // Filters countries by checking the translation against the given string with wildcards
-Country::whereTranslationLike('name', '%Gree%')->first();
+Country::whereTranslationLike('name', '%Pol%')->first();
 ```
 
 ### Magic properties
@@ -335,14 +357,14 @@ To use the magic properties, you have to define the property `$translatedAttribu
 
 ```php
 // Again we start by having a country instance
-$germany = Country::where('code', 'de')->first();
+$poland = Country::where('code', 'pol')->first();
 
 // We can reference properties of the translation object directly from our main model.
 // This uses the default locale and is the equivalent of $germany->translate()->name
-$germany->name; // 'Germany'
+$poland->name; // 'Poland'
 
 // We can also quick access a translation with a custom locale
-$germany->{'name:de'} // 'Deutschland'
+$poland->{'name:de'} // 'Polen'
 ```
 
 ### Fallback locales
@@ -369,41 +391,6 @@ class Country {
 
 }
 ```
-
-#### Country based fallback
-
-Since version v5.3 it is possible to use country based locales. For example, you can have the following locales:
-
-- English: `en`
-- Spanish: `es`
-- Mexican Spanish: `es-MX`
-- Colombian Spanish: `es-CO`
-
-To configuration for these locales looks like this:
-
-```php
-    'locales' => [ 
-        'en',
-        'es' => [
-            'MX',
-            'CO',
-        ],
-    ];
-```
-
-We can also configure the "glue" between the language and country. If for instance we prefer the format `es_MX` instead of `es-MX`, 
-the configuration should look like this:
-
-```php
-   'locale_separator' => '_',
-```
-
-What applies for the fallback of the locales using the `en-MX` format? 
-
-Let's say our fallback locale is `en`. Now, when we try to fetch from the database the translation for the 
-locale `es-MX` but it doesn't exist,  we won't get as fallback the translation for `en`. Translatable will use as a 
-fallback `es` (the first part of `es-MX`) and only if nothing is found, the translation for `en` is returned.
- 
 #### Add ons
 
 Thanks to the community a few packages have been written to make usage of Translatable easier when working with forms:
