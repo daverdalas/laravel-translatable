@@ -79,23 +79,21 @@ return [
     |--------------------------------------------------------------------------
     | Languages Model
     |--------------------------------------------------------------------------
-	|
-	| Points to class representing languages
-	|
+    |
+    | Points to class representing languages
+    |
     */
-    'languages_model' => App\Models\Language::class,
+    'languages_model' => App\Language::class,
 
     /*
     |--------------------------------------------------------------------------
     | Language default foregin key
     |--------------------------------------------------------------------------
-	|
-	| Default name of the foregin language key.
-	| It can be overwrite by public $languageForeginKey in 
-	| a class representing translations.
-	|
+    |
+    | Default name of the foregin language key.
+    | It can be overwrite by public $languageForeginKey in 
+    | a class representing translations.
+    |
     */
     'language_def_foregin_key' => 'language_id'
-
-
 ];
