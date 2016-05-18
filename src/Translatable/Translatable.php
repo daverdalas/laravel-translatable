@@ -235,15 +235,16 @@ trait Translatable
 
         foreach ($attributes as $key => $values) {
             if ($key === 'translations') {
-                if ($totallyGuarded) {
-                    throw new MassAssignmentException($key);
-                }
                 foreach ($values as $translationAttribute => $translationValue) {
-                    $languageSkeletor = $this->getNewLanguageModel();
-                    $languageSkeletor->id = $translationAttribute;
-                    $translation = $this->getTranslationOrNew($languageSkeletor);
-                    $translation->id; 
-					$translation->fill($translationValue);
+                    if ($this->alwaysFillable() || $this->isFillable($translationAttribute)) {
+                        $languageSkeletor = $this->getNewLanguageModel();
+                        $languageSkeletor->id = $translationAttribute;
+                        $translation = $this->getTranslationOrNew($languageSkeletor);
+                        $translation->id;
+                        $translation->fill($translationValue);
+                    }elseif($totallyGuarded){
+                        throw new MassAssignmentException($key);
+                    }
                 }
                 unset($attributes[$key]);
             }
@@ -537,6 +538,14 @@ trait Translatable
         }
 
         return $attributes;
+    }
+
+    /**
+     * @return bool
+     */
+    private function alwaysFillable()
+    {
+        return App::make('config')->get('translatable.always_fillable', false);
     }
 
     /**
