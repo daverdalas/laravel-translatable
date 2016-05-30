@@ -326,6 +326,12 @@ Country::translated()->get();
 // and fallback (if enabled) locale
 Country::withTranslation()->get();
 
+// Eager loads languages relationship
+Country::withLangues()->get();
+
+// Eager load languages and translation
+Country::withLangAndTrans()->get();
+
 // Returns an array containing pairs of country ids and the translated
 // name attribute. For example: 
 // [
@@ -336,6 +342,11 @@ Country::listsTranslations('name')->get()->toArray();
 
 // Filters countries by checking the translation against the given value 
 Country::whereTranslation('name', 'Poland')->first();
+
+// We can also use langauge Model to specify the language
+$english = Language::where('code', 'en')->first();
+Country::whereTranslation('name', 'Poland', $english)->first();
+
 
 // Filters countries by checking the translation against the given string with wildcards
 Country::whereTranslationLike('name', '%Pol%')->first();
