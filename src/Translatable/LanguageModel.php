@@ -1,34 +1,43 @@
 <?php namespace Dimsav\Translatable;
+
 use App;
 use Illuminate\Database\Eloquent\Model;
 
-class LanguageModel extends Model
-{
-    const codeColumnName = 'code';
+class LanguageModel extends Model {
+	const codeColumnName = 'code';
 
-    /**
-     * @return self|null
-     */
-    public static function getFallback(){
-        $languageFallbackCode = self::getFallbackCode();
-        $query = self::getByCodeKey($languageFallbackCode);
-        return $query->first();
-    }
+	/**
+	 * @return self|null
+	 */
+	public static function getFallback() {
+		$languageFallbackCode = self::getFallbackCode();
+		$query                = self::getByCodeKey( $languageFallbackCode );
 
-    /**
-     * @param $key
-     * @return mixed
-     */
-    public static function getByCodeKey($key){
-        $query = self::where(self::codeColumnName, $key);
-        return $query->first();
-    }
+		return $query->first();
+	}
 
-    /**
-     * @return mixed
-     */
-    private static function getFallbackCode()
-    {
-        return App::make('config')->get('translatable.fallback_locale');
-    }
+	/**
+	 * @param $key
+	 *
+	 * @return mixed
+	 */
+	public static function getByCodeKey( $key ) {
+		$query = self::where( self::codeColumnName, $key );
+
+		return $query->first();
+	}
+
+	/**
+	 * @return string
+	 */
+	public static function getCodeColumnName() {
+		return self::codeColumnName;
+	}
+
+	/**
+	 * @return mixed
+	 */
+	private static function getFallbackCode() {
+		return App::make( 'config' )->get( 'translatable.fallback_locale' );
+	}
 }
