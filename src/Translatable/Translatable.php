@@ -569,21 +569,25 @@ trait Translatable
 
 
     /**
+     * @param bool $force Default skip language model
+     *
      * @return array
      */
-    public function toArray()
+    public function toArray($force = false)
     {
         $attributes = parent::toArray();
 
-        $hiddenAttributes = $this->getHidden();
+        $hiddenAttributes   = $this->getHidden();
+        $langugaesModelName = $this->getLanguageModelName();
+        if ( ! $this instanceof $langugaesModelName && ! $force) {
+            foreach ($this->translatedAttributes as $field) {
+                if (in_array($field, $hiddenAttributes)) {
+                    continue;
+                }
 
-        foreach ($this->translatedAttributes as $field) {
-            if (in_array($field, $hiddenAttributes)) {
-                continue;
-            }
-
-            if ($translations = $this->getTranslation()) {
-                $attributes[$field] = $translations->$field;
+                if ($translations = $this->getTranslation()) {
+                    $attributes[$field] = $translations->$field;
+                }
             }
         }
 
