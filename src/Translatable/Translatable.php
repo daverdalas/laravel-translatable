@@ -12,7 +12,7 @@ trait Translatable
     /**
      * Alias for getTranslation()
      *
-     * @param LanguageModel|null $language
+     * @param LanguageModel|null $languagef
      * @param bool $withFallback
      *
      * @return Model|null
@@ -282,9 +282,9 @@ trait Translatable
                         } elseif ($totallyGuarded) {
                             throw new MassAssignmentException($key);
                         }
-                        unset($attributes[$key]);
                     }
                 }
+                unset($attributes[$key]);
             }
         }
 
