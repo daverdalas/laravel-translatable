@@ -269,21 +269,22 @@ trait Translatable
     public function fill(array $attributes)
     {
         $totallyGuarded = $this->totallyGuarded();
-
         foreach ($attributes as $key => $values) {
             if ($key === 'translations') {
-                foreach ($values as $translationAttribute => $translationValue) {
-                    if ($this->alwaysFillable() || $this->isFillable($translationAttribute)) {
-                        $languageSkeletor     = $this->getNewLanguageModel();
-                        $languageSkeletor->id = $translationAttribute;
-                        $translation          = $this->getTranslationOrNew($languageSkeletor);
-                        $translation->id;
-                        $translation->fill($translationValue);
-                    } elseif ($totallyGuarded) {
-                        throw new MassAssignmentException($key);
+                foreach ($values as $languageId => $translations) {
+                    foreach ($translations as $translationAttribute => $translationValue) {
+                        if ($this->alwaysFillable() || $this->isFillable($translationAttribute)) {
+                            $languageSkeletor     = $this->getNewLanguageModel();
+                            $languageSkeletor->id = $languageId;
+                            $translation          = $this->getTranslationOrNew($languageSkeletor);
+                            $translation->id;
+                            $translation->fill([$translationAttribute => $translationValue]);
+                        } elseif ($totallyGuarded) {
+                            throw new MassAssignmentException($key);
+                        }
+                        unset($attributes[$key]);
                     }
                 }
-                unset($attributes[$key]);
             }
         }
 
