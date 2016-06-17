@@ -12,7 +12,7 @@ trait Translatable
     /**
      * Alias for getTranslation()
      *
-     * @param LanguageModel|null $languagef
+     * @param LanguageModel|null $language
      * @param bool $withFallback
      *
      * @return Model|null
