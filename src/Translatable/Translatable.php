@@ -269,6 +269,7 @@ trait Translatable
     public function fill(array $attributes)
     {
         $totallyGuarded = $this->totallyGuarded();
+        
         foreach ($attributes as $key => $values) {
             if ($key === 'translations') {
                 foreach ($values as $languageId => $translations) {
