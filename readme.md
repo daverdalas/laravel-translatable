@@ -347,9 +347,11 @@ Country::whereTranslation('name', 'Poland')->first();
 $english = Language::where('code', 'en')->first();
 Country::whereTranslation('name', 'Poland', $english)->first();
 
-
 // Filters countries by checking the translation against the given string with wildcards
 Country::whereTranslationLike('name', '%Pol%')->first();
+
+// Sorts countries according to the given column in translations table. Default order is DESC
+Country::orderByTranslation('name', 'ASC')->first();
 ```
 
 ### Magic properties
@@ -426,31 +428,6 @@ You are awesome! Watched the repo and reply to the issues. You will help offerin
 #### I am getting collisions with other trait methods!
 
 Translatable is fully compatible with all kinds of Eloquent extensions, including Ardent. If you need help to implement Translatable with these extensions, see this [example](https://gist.github.com/dimsav/9659552).
-
-#### How do I sort by translations?
-
-A tip here is to make the MySQL query first and then do the Eloquent one.
-
-To fetch a list of records ordered by a translated field, you can do this: 
-
-```mysql
-SELECT * from countries
-JOIN country_translations as t on t.country_id = countries.id 
-WHERE locale = 'en'
-GROUP BY countries.id
-ORDER BY t.name desc
-```
-
-The corresponding eloquent query would be:
-
-```php
-Country::join('country_translations as t', 't.country_id', '=', 'countries.id')
-    ->where('locale', 'en')
-    ->groupBy('countries.id')
-    ->orderBy('t.name', 'desc')
-    ->with('translations')
-    ->get();
-```
 
 #### How can I select a country by a translated field?
 
