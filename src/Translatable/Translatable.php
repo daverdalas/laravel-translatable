@@ -269,7 +269,7 @@ trait Translatable
     public function fill(array $attributes)
     {
         $totallyGuarded = $this->totallyGuarded();
-        
+
         foreach ($attributes as $key => $values) {
             if ($key === 'translations') {
                 foreach ($values as $languageId => $translations) {
@@ -567,6 +567,25 @@ trait Translatable
                     $language->id);
             }
         });
+    }
+
+    /**
+     * @param Builder $query
+     * @param $column
+     * @param string $type
+     * @param LanguageModel|null $language
+     *
+     * @return Builder|static
+     */
+    public function scopeOrderByTranslation(Builder $query, $column, $type = 'DESC', LanguageModel $language = null)
+    {
+        $language = $language ?: $this->localeLanguage();
+
+        return $query->join(
+            $this->getTranslationsTable() . ' as t', 't.' . $this->getForeignKey(), '=', $this->getTable() . '.id')
+                     ->where($this->getLanguageRelationKey(), $language->id)
+                     ->select($this->getTable() . '.*')
+                     ->orderBy('t.' . $column, $type);
     }
 
 
