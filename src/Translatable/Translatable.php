@@ -58,9 +58,10 @@ trait Translatable
         $language     = $language ?: $this->localeLanguage();
         $withFallback = $withFallback === null ? $this->useFallback() : $withFallback;
 
-        if ($translation = $this->getTranslationByLanguage($language)) {
+        if ($language && $translation = $this->getTranslationByLanguage($language)) {
             return $translation;
         }
+
         if ($withFallback) {
             $fallbackLanguage = $this->getFallbackLanguage();
             if ($fallbackLanguage && $translation = $this->getTranslationByLanguage($fallbackLanguage)) {
@@ -295,7 +296,7 @@ trait Translatable
     /**
      * @param LanguageModel $language
      */
-    private function getTranslationByLanguage(LanguageModel $language)
+    private function getTranslationByLanguage($language)
     {
         foreach ($this->translations as $translation) {
             if ($translation->getAttribute($this->getLanguageRelationKey()) == $language->id) {
@@ -503,8 +504,10 @@ trait Translatable
 
                 if ($this->useFallback()) {
                     return $query->orWhere($this->getTranslationsTable() . '.' . $this->getLanguageRelationKey(),
-                        $this->localeLanguage()['id']);
+                        $this->getFallbackLanguage()['id']);
                 }
+
+                return $query;
             }
         ]);
     }
