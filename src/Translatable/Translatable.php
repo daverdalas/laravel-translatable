@@ -313,7 +313,8 @@ trait Translatable
     private function getFallbackLanguage()
     {
         $languageModel = $this->getLanguageModelName();
-        $language      = call_user_func_array([$languageModel, 'getFallback'], []);
+        $fallbackCode  = call_user_func_array([$languageModel, 'getFallbackCode'], []);
+        $language      = $this->getLanguageByCodeKey($fallbackCode);
 
         return $language;
     }
