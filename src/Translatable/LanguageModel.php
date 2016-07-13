@@ -41,7 +41,7 @@ class LanguageModel extends Model
     /**
      * @return mixed
      */
-    private static function getFallbackCode()
+    public static function getFallbackCode()
     {
         return App::make('config')->get('translatable.fallback_locale');
     }
