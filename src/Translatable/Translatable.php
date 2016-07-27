@@ -516,7 +516,7 @@ trait Translatable
     /**
      * @param Builder $query
      */
-    public function scopeWithLangues(Builder $query)
+    public function scopeWithLanguages(Builder $query)
     {
         $query->with('languages');
     }
@@ -526,7 +526,7 @@ trait Translatable
      */
     public function scopeWithLangAndTrans(Builder $query)
     {
-        $this->scopeWithLangues($query);
+        $this->scopeWithLanguages($query);
         $this->scopeWithTranslation($query);
     }
 
