@@ -585,9 +585,10 @@ trait Translatable
     {
         $language = $language ?: $this->localeLanguage();
 
-        return $query->join(
-            $this->getTranslationsTable() . ' as t', 't.' . $this->getForeignKey(), '=', $this->getTable() . '.id')
-                     ->where($this->getLanguageRelationKey(), $language->id)
+        return $query->join($this->getTranslationsTable() . ' as t', function ($join) use ($language) {
+            $join->on('t.' . $this->getForeignKey(), '=', $this->getTable() . '.id')
+                 ->where($this->getLanguageRelationKey(), '=', $language->id);
+        })
                      ->select($this->getTable() . '.*')
                      ->orderBy('t.' . $column, $type);
     }
